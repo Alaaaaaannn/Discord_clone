@@ -12,8 +12,30 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Dedicated, fast type-check on a single Node version. Type errors are
+  # deterministic across Node versions, so there's no need to run this in a
+  # matrix. Runs in parallel with lint and build.
+  typecheck:
+    name: Type check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npx tsc --noEmit
+
   build:
-    name: Lint, type-check & build
+    name: Lint & build
     runs-on: ubuntu-latest
 
     strategy:
@@ -36,9 +58,6 @@ jobs:
 
       - name: Lint
         run: npm run lint
-
-      - name: Type check
-        run: npx tsc --noEmit
 
       - name: Build
         run: npm run build
