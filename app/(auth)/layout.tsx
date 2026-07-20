@@ -2,8 +2,7 @@ import { Menubar } from "@/components/ui/menubar";
 
 const AuthLayout = ({ children }: { children: React.ReactNode }) => {
   return (
-    <div>
-      <Menubar/>
+    <div className="h-full w-full flex flex-col items-center justify-center bg-gray-400">
       {children}
     </div>
   );
