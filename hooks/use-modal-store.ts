@@ -1,4 +1,4 @@
-import { Server } from "http";
+import { Server } from "@/generated/prisma";
 import { create } from "zustand";
 
 export type ModalType = "createServer" | "invite";
