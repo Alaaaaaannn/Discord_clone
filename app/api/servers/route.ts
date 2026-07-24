@@ -23,7 +23,7 @@ export async function POST(req: Request) {
           create: [{ name: "general", profileId: profile.id }],
         },
         members: {
-            create: [{profileId: profile.id, role: MemberRole.ADMIN, description:"The alpha wolf of this server"}]
+            create: [{profileId: profile.id, role: MemberRole.ADMIN}]
         }
       },
     });
