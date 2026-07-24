@@ -25,7 +25,7 @@ model Server {
   id String @id @default(uuid())
   name String
   imageUrl String @db.Text
-  inviteCode String @db.Text
+  inviteCode String @unique
   description String @db.Text
   profileId String
   profile Profile @relation(fields: [profileId],references: [id],onDelete: Cascade)
@@ -45,7 +45,6 @@ enum MemberRole {
 model Member {
   id String @id @default(uuid())
   role MemberRole @default(GUEST)
-  description String @db.Text
   serverId String
   server Server @relation(fields: [serverId],references: [id],onDelete: Cascade)
   profileId String
