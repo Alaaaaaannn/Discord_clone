@@ -1,4 +1,5 @@
 import { ChatHeader } from "@/components/chat/chat-header";
+import { ChatInput } from "@/components/chat/chat-input";
 import { getOrCreateConversation } from "@/lib/conversation";
 import { currentProfile } from "@/lib/current-profile";
 import { prisma } from "@/lib/prisma";
@@ -17,6 +18,7 @@ const MemberIdPage = async ({ params }: MemberIdPageProps) => {
     const { redirectToSignIn } = await auth();
     return redirectToSignIn();
   }
+
   const { serverId, memberId } = await params;
   const currentMember = await prisma.member.findFirst({
     where: {

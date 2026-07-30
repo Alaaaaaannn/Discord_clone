@@ -2,7 +2,7 @@ import { ChatHeader } from "@/components/chat/chat-header";
 import { ChatInput } from "@/components/chat/chat-input";
 import { currentProfile } from "@/lib/current-profile";
 import { prisma } from "@/lib/prisma";
-import { RedirectToSignIn } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 
 interface ChannelIdPageProps {
@@ -15,7 +15,8 @@ interface ChannelIdPageProps {
 const ChannelIdPage = async ({ params }: ChannelIdPageProps) => {
   const profile = await currentProfile();
   if (!profile) {
-    return <RedirectToSignIn />;
+    const { redirectToSignIn } = await auth();
+    return redirectToSignIn();
   }
 
   const { serverId, channelId } = await params;
@@ -48,7 +49,7 @@ const ChannelIdPage = async ({ params }: ChannelIdPageProps) => {
       <ChatInput
         name={channel.name}
         type="channel"
-        apiUrl="api/socket/messages"
+        apiUrl="/api/socket/messages"
         query={{
           channelId: channel.id,
           serverId: channel.serverId,
