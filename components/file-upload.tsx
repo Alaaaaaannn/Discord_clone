@@ -6,10 +6,17 @@ import { useState } from "react";
 
 import { UploadDropzone } from "@/lib/uploadthing";
 
+interface UploadedFile {
+  url: string;
+  name: string;
+  type: string;
+}
+
 interface FileUploadProps {
-  onChange: (url?: string) => void;
   value: string;
   endpoint: "messageFile" | "serverImage";
+  onChange: (url?: string) => void;
+  onFileUploaded?: (file: UploadedFile) => void;
 }
 
 /**
@@ -25,7 +32,7 @@ const looksLikePdf = (value: string) => {
   }
 };
 
-export const FileUpload = ({ onChange, value, endpoint }: FileUploadProps) => {
+export const FileUpload = ({ onChange, value, endpoint, onFileUploaded }: FileUploadProps) => {
   // UploadThing's ufsUrl is https://<appId>.ufs.sh/f/<key>, where <key> is an
   // opaque id carrying no file extension. The type therefore can't be derived
   // from the URL — it has to come off the upload result, which reports the real
@@ -37,7 +44,7 @@ export const FileUpload = ({ onChange, value, endpoint }: FileUploadProps) => {
 
   const clear = () => {
     setUploaded(null);
-    onChange("");
+    onChange(undefined);
   };
 
   const isPdf = uploaded
@@ -98,8 +105,18 @@ export const FileUpload = ({ onChange, value, endpoint }: FileUploadProps) => {
       className="w-full ut-label:text-sm ut-button:bg-indigo-500 ut-button:ut-readying:bg-indigo-500/50 cursor-pointer"
       onClientUploadComplete={(res) => {
         const file = res?.[0];
-        setUploaded(file ? { name: file.name, type: file.type } : null);
-        onChange(file?.ufsUrl);
+
+        if (!file) return;
+
+        setUploaded({
+          name: file.name,
+          type: file.type,
+        });
+
+        onChange(file.ufsUrl);
+        onFileUploaded?.({
+          url: file.ufsUrl,name:file.name,type:file.type
+        })
       }}
       onUploadError={(error: Error) => {
         console.log(error);

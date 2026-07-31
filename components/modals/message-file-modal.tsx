@@ -12,7 +12,7 @@ import axios from "axios";
 import qs from "query-string";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
-import { Field, FieldLabel, FieldError } from "@/components/ui/field";
+import { Field, FieldError } from "@/components/ui/field";
 import { Button } from "../ui/button";
 import { FileUpload } from "../file-upload";
 import { useRouter } from "next/navigation";
@@ -22,6 +22,8 @@ const formSchema = z.object({
   fileUrl: z.string().min(1, {
     message: "Attachment is required.",
   }),
+  fileName: z.string().min(1),
+  fileType: z.string().min(1),
 });
 export const MessageFileModal = () => {
   const { isOpen, onClose, type, data } = useModal();
@@ -32,6 +34,8 @@ export const MessageFileModal = () => {
     resolver: zodResolver(formSchema),
     defaultValues: {
       fileUrl: "",
+      fileName: "",
+      fileType: "",
     },
   });
 
@@ -50,6 +54,9 @@ export const MessageFileModal = () => {
       await axios.post(url, {
         ...values,
         content: values.fileUrl,
+        fileUrl: values.fileUrl,
+        fileName: values.fileName,
+        fileType: values.fileType,
       });
       form.reset();
       router.refresh();
@@ -79,7 +86,13 @@ export const MessageFileModal = () => {
                   <FileUpload
                     endpoint="messageFile"
                     value={field.value}
-                    onChange={field.onChange}
+                    onChange={(url) => {
+                      form.setValue("fileUrl", url ?? "");
+                    }}
+                    onFileUploaded={(file) => {
+                      form.setValue("fileName", file.name);
+                      form.setValue("fileType", file.type);
+                    }}
                   />
                   {fieldState.invalid && (
                     <FieldError errors={[fieldState.error]} />
