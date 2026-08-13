@@ -34,7 +34,7 @@ export const ChatHeader = ({
   imageUrl,
 }: ChatHeaderProps) => {
   return (
-    <div className="text-md font-semibold px-3 dark:bg-[#1a1a1e] flex items-center h-12 border-neutral-200 dark:border-neutral-800 border-b-2">
+    <div className="text-md font-semibold px-3 py-5 dark:bg-[#1a1a1e] flex items-center h-12 border-neutral-200 dark:border-neutral-800 border-b-2">
       <MobileToggle serverId={serverId} />
 
       {type === "channel" &&

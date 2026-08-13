@@ -19,7 +19,10 @@ const { Server } = require("socket.io");
 
 const dev = process.env.NODE_ENV !== "production";
 const port = parseInt(process.env.PORT || "3000", 10);
-const hostname = process.env.HOSTNAME || "localhost";
+// Deliberately HOST, not HOSTNAME: containers (Railway, Render, Docker) set
+// HOSTNAME to the container id, which is not an address we can serve on.
+// listen() below is left unbound so it accepts traffic on all interfaces.
+const hostname = process.env.HOST || (dev ? "localhost" : "0.0.0.0");
 
 const app = next({ dev, hostname, port });
 const handler = app.getRequestHandler();
