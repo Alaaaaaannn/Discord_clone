@@ -22,7 +22,7 @@ const roleIconMap = {
 export const ServerMember = ({ member, server }: ServerMemberProps) => {
   const params = useParams();
   const router = useRouter();
-  const { memberId } = params;
+  const memberId = params?.memberId;
   const icon = roleIconMap[member.role];
   const onClick = () => {
     router.push(`/servers/${params?.serverId}/conversations/${member.id}`);

@@ -43,11 +43,11 @@ export const CallLobby = ({
   const Icon = video ? Video : Phone;
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center gap-y-4 px-6 text-center">
+    <div className="flex-1 flex flex-col dark:bg-[#1a1a1e] items-center justify-center gap-y-4 px-6 text-center">
       {imageUrl ? (
         <UserAvatar src={imageUrl} className="h-20 w-20 md:h-20 md:w-20" />
       ) : (
-        <div className="h-20 w-20 rounded-full flex items-center justify-center bg-zinc-200 dark:bg-zinc-700">
+        <div className="h-20 w-20 rounded-full flex items-center justify-center bg-zinc-200 dark:bg-zinc-800">
           <Icon className="h-10 w-10 text-zinc-500 dark:text-zinc-400" />
         </div>
       )}
@@ -65,10 +65,18 @@ export const CallLobby = ({
       </p>
 
       <div className="flex items-center gap-x-3 pt-2">
-        <Button variant="ghost" onClick={() => router.push(cancelHref)}>
+        <Button
+          variant="ghost"
+          className="cursor-pointer"
+          onClick={() => router.push(cancelHref)}
+        >
           Cancel
         </Button>
-        <Button variant="primary" onClick={() => setJoined(true)}>
+        <Button
+          variant="primary"
+          className="cursor-pointer"
+          onClick={() => setJoined(true)}
+        >
           <Icon />
           Join call
         </Button>

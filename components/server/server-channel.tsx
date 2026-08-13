@@ -1,6 +1,7 @@
 "use client";
 
-import { Channel, ChannelType, MemberRole, Server } from "@/generated/prisma";
+import { Channel, ChannelType, MemberRole } from "@/generated/prisma";
+import { ServerWithMembersWithProfiles } from "@/types";
 import { cn } from "@/lib/utils";
 import { Edit, Hash, Lock, Mic, Trash, Video } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
@@ -9,7 +10,9 @@ import { ModalType, useModal } from "@/hooks/use-modal-store";
 
 interface ServerChannelProps {
   channel: Channel;
-  server: Server;
+  // The sidebar passes a server with members+profiles included, which is what
+  // the edit/delete channel modals expect to receive.
+  server: ServerWithMembersWithProfiles;
   role?: MemberRole;
 }
 

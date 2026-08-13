@@ -20,7 +20,8 @@ interface ModalData {
   channelType?: ChannelType;
   channel?: Channel;
   apiUrl?: string;
-  query: Record<string, any>;
+  // Optional: most modals carry no query, and onOpen's data is optional too.
+  query?: Record<string, any>;
 }
 
 interface ModalStore {

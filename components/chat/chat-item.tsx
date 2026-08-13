@@ -109,7 +109,8 @@ export const ChatItem = ({
   const isOwner = currentMember.id === member.id;
   const canDeleteMessage = !deleted && (isAdmin || isModerator || isOwner);
   const canEditMessage = !deleted && isOwner && !fileUrl;
-  const isPDF = fileType === "application/pdf";
+  // Requires fileUrl, like isImage below — the branch renders a link to it.
+  const isPDF = !!fileUrl && fileType === "application/pdf";
   const isImage = !!fileUrl && fileType?.startsWith("image/");
   return (
     <div
@@ -159,7 +160,7 @@ export const ChatItem = ({
             <div className="relative flex items-center p-2 mt-2 rounded-md bg-background/10">
               <FileIcon className="h-10 w-10 shrink-0 fill-indigo-200 stroke-indigo-400" />
               <a
-                href={fileUrl}
+                href={fileUrl ?? undefined}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="ml-2 truncate text-sm text-indigo-500 dark:text-indigo-300 hover:underline"
