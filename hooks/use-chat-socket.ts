@@ -49,8 +49,11 @@ export const useChatSocket = ({
     const onAdd = (message: MessageWithMemberWithProfile) => {
       queryClient.setQueryData([queryKey], (oldData: any) => {
         if (!oldData?.pages?.length) {
+          // pageParams must stay in step with pages or useInfiniteQuery
+          // cannot page from this cache entry afterwards.
           return {
             pages: [{ items: [message] }],
+            pageParams: [undefined],
           };
         }
         const pages = [...oldData.pages];

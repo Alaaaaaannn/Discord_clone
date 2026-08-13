@@ -9,7 +9,6 @@ import { Input } from "../ui/input";
 import { Plus } from "lucide-react";
 import { useModal } from "@/hooks/use-modal-store";
 import { EmojiPicker } from "../emoji-picker";
-import { useRouter } from "next/navigation";
 
 interface ChatInputProps {
   apiUrl: string;
@@ -24,7 +23,6 @@ const formSchema = z.object({
 
 export const ChatInput = ({ apiUrl, query, name, type }: ChatInputProps) => {
   const { onOpen } = useModal();
-  const router = useRouter();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -42,7 +40,8 @@ export const ChatInput = ({ apiUrl, query, name, type }: ChatInputProps) => {
       });
       await axios.post(url, values);
       form.reset();
-      router.refresh();
+      // No router.refresh() — the message comes back over the socket as
+      // `chat:<id>:messages` and useChatSocket writes it into the query cache.
     } catch (error) {
       console.log(error);
     }

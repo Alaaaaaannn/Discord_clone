@@ -1,6 +1,8 @@
 import { ChatHeader } from "@/components/chat/chat-header";
 import { ChatInput } from "@/components/chat/chat-input";
 import { ChatMessages } from "@/components/chat/chat-messages";
+import { CallLobby } from "@/components/call-lobby";
+import { ChannelType } from "@/generated/prisma";
 import { currentProfile } from "@/lib/current-profile";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
@@ -45,19 +47,53 @@ const ChannelIdPage = async ({ params }: ChannelIdPageProps) => {
         name={channel.name}
         serverId={channel.serverId}
         type="channel"
+        channelType={channel.type}
       />
-      <ChatMessages member={member} name={channel.name} type="channel" apiUrl="/api/messages" socketUrl="/api/socket/messages" socketQuery={{
-        channelId: channel.id, serverId: channel.serverId,
-      }} paramKey="channelId" paramValue={channel.id} chatId={channel.id}/>
-      <ChatInput
-        name={channel.name}
-        type="channel"
-        apiUrl="/api/socket/messages"
-        query={{
-          channelId: channel.id,
-          serverId: channel.serverId,
-        }}
-      />
+      {channel.type === ChannelType.TEXT && (
+        <>
+          <ChatMessages
+            member={member}
+            name={channel.name}
+            type="channel"
+            apiUrl="/api/messages"
+            socketUrl="/api/socket/messages"
+            socketQuery={{
+              channelId: channel.id,
+              serverId: channel.serverId,
+            }}
+            paramKey="channelId"
+            paramValue={channel.id}
+            chatId={channel.id}
+          />
+          <ChatInput
+            name={channel.name}
+            type="channel"
+            apiUrl="/api/socket/messages"
+            query={{
+              channelId: channel.id,
+              serverId: channel.serverId,
+            }}
+          />
+        </>
+      )}
+      {channel.type === ChannelType.AUDIO && (
+        <CallLobby
+          chatId={channel.id}
+          video={false}
+          audio={true}
+          name={`#${channel.name}`}
+          cancelHref={`/servers/${channel.serverId}`}
+        />
+      )}
+      {channel.type === ChannelType.VIDEO && (
+        <CallLobby
+          chatId={channel.id}
+          video={true}
+          audio={true}
+          name={`#${channel.name}`}
+          cancelHref={`/servers/${channel.serverId}`}
+        />
+      )}
     </div>
   );
 };
