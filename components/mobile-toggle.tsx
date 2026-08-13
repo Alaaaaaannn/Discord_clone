@@ -6,10 +6,10 @@ import { ServerSidebar } from "./server/server-sidebar";
 export const MobileToggle = ({ serverId }: { serverId: string }) => {
   return (
     <Sheet>
-      <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="md:hidden">
-          <Menu />
-        </Button>
+      <SheetTrigger
+        render={<Button variant="ghost" size="icon" className="md:hidden" />}
+      >
+        <Menu />
       </SheetTrigger>
       <SheetContent side="left" className="p-0 gap-0 flex-row">
         <div className="w-[72px]">

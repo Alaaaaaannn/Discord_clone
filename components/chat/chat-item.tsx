@@ -14,6 +14,7 @@ import { Edit, FileIcon, ShieldAlert, ShieldCheck, Trash } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import { useRouter, useParams } from "next/navigation";
 import { Field } from "../ui/field";
 import { useModal } from "@/hooks/use-modal-store";
 
@@ -33,14 +34,6 @@ interface ChatItemProps {
   socketUrl: string;
   socketQuery: Record<string, string>;
 }
-
-const looksLikePdf = (value: string) => {
-  try {
-    return new URL(value).pathname.toLowerCase().endsWith(".pdf");
-  } catch {
-    return value.toLowerCase().split("?")[0].endsWith(".pdf");
-  }
-};
 
 const roleIconMap = {
   GUEST: null,
@@ -68,6 +61,13 @@ export const ChatItem = ({
 }: ChatItemProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const { onOpen } = useModal();
+  const params = useParams();
+  const router = useRouter();
+  const onMemberClick = () => {
+    if(member.id === currentMember.id) return;
+    router.push(`/servers/${params?.serverId}/conversations/${member.id}`);
+
+  }
   useEffect(() => {
     const handleKeyDown = (event: any) => {
       if (event.key === "Escape" || event.keyCode === 27) {
@@ -118,13 +118,14 @@ export const ChatItem = ({
       )}
     >
       <div className="group flex gap-x-2 items-start w-full">
-        <div className="cursor-pointer hover:drop-shadow-md transition">
+        <div onClick={onMemberClick} className="cursor-pointer hover:drop-shadow-md transition">
           <UserAvatar src={member.profile.imageUrl} />
         </div>
         <div className="flex flex-col w-full">
           <div className="flex items-center gap-x-2">
             <div className="flex items-center">
               <p
+                onClick={onMemberClick}
                 className={cn(
                   "font-semibold text-white text-sm hover:underline cursor-pointer",
                   isAdmin && "text-emerald-500",
