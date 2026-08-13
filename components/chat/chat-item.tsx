@@ -11,9 +11,24 @@ import { Member, MemberRole, Profile } from "@/generated/prisma";
 import { ChatViewer } from "@/types";
 import { UserAvatar } from "../user-avatar";
 import { ActionTooltip } from "../action-tooltip";
-import { Edit, FileIcon, ShieldAlert, ShieldCheck, Trash } from "lucide-react";
+import {
+  Check,
+  Copy,
+  CornerUpRight,
+  Edit,
+  FileIcon,
+  Reply,
+  ShieldAlert,
+  ShieldCheck,
+  SmilePlus,
+  Trash,
+} from "lucide-react";
+import { EmojiPicker } from "../emoji-picker";
+import { MessageReactions } from "./message-reactions";
+import { useReply } from "@/hooks/use-reply-store";
+import { ChatReaction } from "@/types";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { useRouter, useParams } from "next/navigation";
 import { Field } from "../ui/field";
@@ -34,7 +49,18 @@ interface ChatItemProps {
   isUpdated: boolean;
   socketUrl: string;
   socketQuery: Record<string, string>;
+  reactions?: ChatReaction[];
+  /** The message this one replies to, if any. */
+  parent?: {
+    id: string;
+    content: string;
+    deleted: boolean;
+    member: { profile: { name: string } };
+  } | null;
 }
+
+/** Quick picks in the hover toolbar; the picker covers everything else. */
+const QUICK_REACTIONS = ["👍", "😂", "❤️", "🎉", "😮"];
 
 const roleIconMap = {
   GUEST: null,
@@ -59,8 +85,78 @@ export const ChatItem = ({
   isUpdated,
   socketUrl,
   socketQuery,
+  reactions = [],
+  parent = null,
 }: ChatItemProps) => {
   const [isEditing, setIsEditing] = useState(false);
+  const [copied, setCopied] = useState(false);
+  // Touch devices have no hover, so a long press stands in for it.
+  const [showActions, setShowActions] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isTouchRef = useRef(false);
+  const { setReplyTo } = useReply();
+
+  const cancelLongPress = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
+
+  const startLongPress = () => {
+    isTouchRef.current = true;
+    cancelLongPress();
+    longPressTimer.current = setTimeout(() => setShowActions(true), 450);
+  };
+
+  // Clear any pending timer if the message unmounts mid-press.
+  useEffect(() => cancelLongPress, []);
+
+  // Tap anywhere else to dismiss.
+  useEffect(() => {
+    if (!showActions) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) {
+        setShowActions(false);
+      }
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [showActions]);
+
+  // socketQuery identifies the chat: channelId for servers, conversationId for DMs.
+  const chatId = socketQuery.channelId ?? socketQuery.conversationId ?? "";
+
+  const onToggleReaction = async (emoji: string) => {
+    try {
+      const url = qs.stringifyUrl({
+        url: "/api/socket/reactions",
+        query: { ...socketQuery, messageId: id },
+      });
+      await axios.post(url, { emoji });
+      setShowActions(false);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const onCopy = () => {
+    navigator.clipboard.writeText(content);
+    setCopied(true);
+    setShowActions(false);
+    setTimeout(() => setCopied(false), 1000);
+  };
+
+  const onReply = () => {
+    setReplyTo({
+      id,
+      name: member.profile.name,
+      content,
+      chatId,
+    });
+    setShowActions(false);
+  };
   const { onOpen } = useModal();
   const params = useParams();
   const router = useRouter();
@@ -114,13 +210,37 @@ export const ChatItem = ({
   const isImage = !!fileUrl && fileType?.startsWith("image/");
   return (
     <div
-      className="relative group flex my-1 items-center hover:bg-gray-200 dark:hover:bg-[#242429] p-4 transition w-full"
+      ref={rootRef}
+      onTouchStart={startLongPress}
+      onTouchEnd={cancelLongPress}
+      onTouchMove={cancelLongPress}
+      onTouchCancel={cancelLongPress}
+      // Suppress the OS text-selection menu that a long press would otherwise
+      // raise on top of ours. Right-click on desktop is left alone.
+      onContextMenu={(e) => {
+        if (isTouchRef.current) e.preventDefault();
+      }}
+      className={cn(
+        "relative group flex my-1 items-center hover:bg-gray-200 dark:hover:bg-[#242429] p-4 transition w-full",
+        showActions && "bg-gray-200 dark:bg-[#242429] select-none",
+      )}
     >
       <div className="group flex gap-x-2 items-start w-full">
         <div onClick={onMemberClick} className="cursor-pointer hover:drop-shadow-md transition">
           <UserAvatar src={member.profile.imageUrl} />
         </div>
         <div className="flex flex-col w-full">
+          {parent && (
+            <div className="mb-1 flex items-center gap-x-1 text-xs text-zinc-500 dark:text-zinc-400">
+              <CornerUpRight className="h-3 w-3 shrink-0" />
+              <span className="font-semibold">
+                {parent.member.profile.name}
+              </span>
+              <span className="truncate opacity-80">
+                {parent.deleted ? "Original message was deleted" : parent.content}
+              </span>
+            </div>
+          )}
           <div className="flex items-center gap-x-2">
             <div className="flex items-center">
               <p
@@ -222,10 +342,59 @@ export const ChatItem = ({
               </span>
             </div>
           )}
+          {!deleted && (
+            <MessageReactions
+              reactions={reactions}
+              currentProfileId={currentMember.profileId}
+              onToggle={onToggleReaction}
+            />
+          )}
         </div>
       </div>
-      {canDeleteMessage && (
-        <div className="hidden group-hover:flex items-center gap-x-2 absolute p-1 -top-2 right-5 bg-white dark:bg-zinc-800 border rounded-sm">
+      {!deleted && (
+        <div
+          className={cn(
+            "hidden group-hover:flex items-center gap-x-2 absolute p-1 -top-2 right-5 bg-white dark:bg-zinc-800 border rounded-sm",
+            // Long-pressed on touch: show it without needing hover.
+            showActions && "flex",
+          )}
+        >
+          {QUICK_REACTIONS.map((emoji) => (
+            <ActionTooltip key={emoji} label={emoji}>
+              <button
+                type="button"
+                onClick={() => onToggleReaction(emoji)}
+                className="cursor-pointer text-sm leading-none transition hover:scale-125"
+              >
+                {emoji}
+              </button>
+            </ActionTooltip>
+          ))}
+
+          <EmojiPicker onChange={onToggleReaction} side="left" sideOffset={8}>
+            <ActionTooltip label="React">
+              <SmilePlus className="cursor-pointer w-4 h-4 text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 transition" />
+            </ActionTooltip>
+          </EmojiPicker>
+
+          <ActionTooltip label="Reply">
+            <Reply
+              onClick={onReply}
+              className="cursor-pointer w-4 h-4 text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 transition"
+            />
+          </ActionTooltip>
+
+          <ActionTooltip label={copied ? "Copied!" : "Copy text"}>
+            {copied ? (
+              <Check className="w-4 h-4 text-emerald-500" />
+            ) : (
+              <Copy
+                onClick={onCopy}
+                className="cursor-pointer w-4 h-4 text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 transition"
+              />
+            )}
+          </ActionTooltip>
+
           {canEditMessage && (
             <ActionTooltip label="Edit">
               <Edit
@@ -234,6 +403,7 @@ export const ChatItem = ({
               />
             </ActionTooltip>
           )}
+          {canDeleteMessage && (
           <ActionTooltip label="Delete">
             <Trash
               onClick={() =>
@@ -245,6 +415,7 @@ export const ChatItem = ({
               className="cursor-pointer ml-auto w-4 h-4 text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 transition"
             />
           </ActionTooltip>
+          )}
         </div>
       )}
     </div>

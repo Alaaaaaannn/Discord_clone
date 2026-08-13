@@ -17,6 +17,15 @@ export type ServerWithMembersWithProfiles = Server & {
 export type ChatViewer = {
   id: string;
   role: MemberRole;
+  // Reactions are keyed by profile, not member, so "did I react" needs this.
+  profileId: string;
+};
+
+/** Reaction rows as they reach the client (see lib/message-includes). */
+export type ChatReaction = {
+  id: string;
+  emoji: string;
+  profileId: string;
 };
 
 export type NextApiResponseServerIo = NextApiResponse & {

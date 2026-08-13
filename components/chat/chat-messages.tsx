@@ -1,7 +1,7 @@
 "use client";
 
 import { Member, Message, Profile } from "@/generated/prisma";
-import { ChatViewer } from "@/types";
+import { ChatReaction, ChatViewer } from "@/types";
 import { Fragment, useRef, ComponentRef } from "react";
 import { ChatWelcome } from "./chat-welcome";
 import { format } from "date-fns";
@@ -13,10 +13,13 @@ import { useChatScroll } from "@/hooks/use-chat-scroll";
 
 const DATE_FORMAT = "d MMM yyyy, HH:mm";
 
+type MessageAuthor = Member & { profile: Profile };
+
 type MessageWithMemberWithProfile = Message & {
-  member: Member & {
-    profile: Profile;
-  };
+  member: MessageAuthor;
+  reactions?: ChatReaction[];
+  // One level of reply context, as returned by lib/message-includes.
+  parent?: (Message & { member: MessageAuthor }) | null;
 };
 
 interface ChatMessagesProps {
@@ -126,6 +129,8 @@ export const ChatMessages = ({
                 isUpdated={message.updatedAt !== message.createdAt}
                 socketUrl={socketUrl}
                 socketQuery={socketQuery}
+                reactions={message.reactions}
+                parent={message.parent}
               />
             ))}
           </Fragment>

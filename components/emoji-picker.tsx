@@ -12,20 +12,31 @@ import {
 
 interface EmojiPickerProps {
   onChange: (value: string) => void;
+  /** Custom trigger. Defaults to the composer's smiley. */
+  children?: React.ReactNode;
+  side?: "top" | "right" | "bottom" | "left";
+  sideOffset?: number;
 }
 
-export const EmojiPicker = ({ onChange }: EmojiPickerProps) => {
+export const EmojiPicker = ({
+  onChange,
+  children,
+  side = "right",
+  sideOffset = 40,
+}: EmojiPickerProps) => {
   // Controlled so picking an emoji closes the popover.
   const [open, setOpen] = useState(false);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger className="cursor-pointer">
-        <Smile className="text-zinc-500 dark:text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition" />
+        {children ?? (
+          <Smile className="text-zinc-500 dark:text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition" />
+        )}
       </PopoverTrigger>
       <PopoverContent
-        side="right"
-        sideOffset={40}
+        side={side}
+        sideOffset={sideOffset}
         // Base UI's popover ships w-72/p-4/ring/shadow. frimousse is headless, so
         // the picker below supplies its own surface — strip the wrapper's chrome.
         className="mb-16 w-auto border-none bg-transparent p-0 shadow-none ring-0 drop-shadow-none"

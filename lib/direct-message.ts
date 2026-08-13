@@ -9,24 +9,28 @@ import { MemberRole, Profile } from "@/generated/prisma";
  * makes ChatItem's "admins and moderators may delete others' messages" rule
  * inert in a DM, so only the author can delete their own message.
  */
-export const withMemberShape = <
-  T extends { profileId: string; profile: Profile },
->(
-  message: T,
-) => ({
-  ...message,
-  member: {
-    id: message.profileId,
-    role: MemberRole.GUEST,
-    profileId: message.profileId,
-    profile: message.profile,
-  },
-});
-
-/** The Member-shaped stand-in for the signed-in user in a DM. */
-export const asCurrentMember = (profile: Profile) => ({
+const memberFrom = (profile: Profile) => ({
   id: profile.id,
   role: MemberRole.GUEST,
   profileId: profile.id,
   profile,
 });
+
+type DmLike = {
+  profileId: string;
+  profile: Profile;
+  // A replied-to message, already loaded with its author.
+  parent?: ({ profileId: string; profile: Profile } & object) | null;
+};
+
+export const withMemberShape = <T extends DmLike>(message: T) => ({
+  ...message,
+  member: memberFrom(message.profile),
+  // The parent needs the same treatment, or the reply preview has no author.
+  parent: message.parent
+    ? { ...message.parent, member: memberFrom(message.parent.profile) }
+    : null,
+});
+
+/** The Member-shaped stand-in for the signed-in user in a DM. */
+export const asCurrentMember = (profile: Profile) => memberFrom(profile);

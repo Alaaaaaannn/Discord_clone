@@ -6,10 +6,12 @@ import axios from "axios";
 import qs from "query-string";
 import { Field } from "@/components/ui/field";
 import { Input } from "../ui/input";
-import { Plus } from "lucide-react";
+import { CornerUpRight, Plus, Send, X } from "lucide-react";
 import { useModal } from "@/hooks/use-modal-store";
+import { useReply } from "@/hooks/use-reply-store";
 import { EmojiPicker } from "../emoji-picker";
 import { GifPicker, type GiphyGif } from "../gif-picker";
+import { cn } from "@/lib/utils";
 
 interface ChatInputProps {
   apiUrl: string;
@@ -24,6 +26,12 @@ const formSchema = z.object({
 
 export const ChatInput = ({ apiUrl, query, name, type }: ChatInputProps) => {
   const { onOpen } = useModal();
+  const { replyTo, clearReplyTo } = useReply();
+
+  // The chat this composer belongs to, so a reply picked in one channel can't
+  // follow you into another.
+  const chatId = query.channelId ?? query.conversationId;
+  const activeReply = replyTo?.chatId === chatId ? replyTo : null;
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -55,8 +63,13 @@ export const ChatInput = ({ apiUrl, query, name, type }: ChatInputProps) => {
         url: apiUrl,
         query,
       });
-      await axios.post(url, values);
+      await axios.post(url, {
+        ...values,
+        // Server-side validated against this chat before it's stored.
+        parentId: activeReply?.id,
+      });
       form.reset();
+      clearReplyTo();
       // No router.refresh() — the message comes back over the socket as
       // `chat:<id>:messages` and useChatSocket writes it into the query cache.
     } catch (error) {
@@ -71,6 +84,26 @@ export const ChatInput = ({ apiUrl, query, name, type }: ChatInputProps) => {
         name="content"
         render={({ field }) => (
           <Field className="dark:bg-[#1a1a1e]">
+            {activeReply && (
+              <div className="mx-8 flex items-center gap-x-2 rounded-t-lg bg-zinc-200/90 px-3 py-1.5 text-xs text-zinc-600 dark:bg-[#1c1d21] dark:text-zinc-300">
+                <CornerUpRight className="h-3 w-3 shrink-0" />
+                <span>
+                  Replying to{" "}
+                  <span className="font-semibold">{activeReply.name}</span>
+                </span>
+                <span className="truncate opacity-70">
+                  {activeReply.content}
+                </span>
+                <button
+                  type="button"
+                  onClick={clearReplyTo}
+                  aria-label="Cancel reply"
+                  className="ml-auto shrink-0 cursor-pointer transition hover:text-zinc-800 dark:hover:text-white"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            )}
             <div className="relative p-4">
               <button
                 type="button"
@@ -92,6 +125,18 @@ export const ChatInput = ({ apiUrl, query, name, type }: ChatInputProps) => {
                     field.onChange(`${field.value} ${emoji}`)
                   }
                 />
+                <button
+                  type="submit"
+                  disabled={isLoading || !field.value.trim()}
+                  aria-label="Send message"
+                  className={cn(
+                    "cursor-pointer text-zinc-500 transition hover:text-zinc-600 dark:text-zinc-400 dark:hover:text-zinc-300",
+                    // Nothing to send yet — visible, but inert and non-reactive.
+                    "disabled:cursor-default disabled:opacity-40 disabled:hover:text-zinc-500 dark:disabled:hover:text-zinc-400",
+                  )}
+                >
+                  <Send />
+                </button>
               </div>
             </div>
           </Field>

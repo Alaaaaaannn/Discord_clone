@@ -27,6 +27,7 @@ model Profile {
 
   friendRequestsSent FriendRequest[] @relation("Requester")
   friendRequestsReceived FriendRequest[] @relation("Addressee")
+  reactions Reaction[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -123,10 +124,44 @@ model Message {
   channelId String
   channel Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
   deleted Boolean @default(false)
+
+  // Reply target. SetNull so deleting a message doesn't cascade away replies.
+  parentId String?
+  parent Message? @relation("MessageReplies", fields: [parentId], references: [id], onDelete: SetNull)
+  replies Message[] @relation("MessageReplies")
+
+  reactions Reaction[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   @@index([channelId])
   @@index([memberId])
+  @@index([parentId])
+}
+
+// One row per (message, person, emoji). Exactly one of messageId /
+// directMessageId is set — channel messages and DMs are separate tables, but a
+// reaction behaves identically on both.
+model Reaction {
+  id String @id @default(uuid())
+  emoji String
+
+  profileId String
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  messageId String?
+  message Message? @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  directMessageId String?
+  directMessage DirectMessage? @relation(fields: [directMessageId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([messageId, profileId, emoji])
+  @@unique([directMessageId, profileId, emoji])
+  @@index([messageId])
+  @@index([directMessageId])
+  @@index([profileId])
 }
 
 model Conversation {
@@ -158,9 +193,16 @@ model DirectMessage {
 
   deleted Boolean @default(false)
 
+  parentId String?
+  parent DirectMessage? @relation("DirectMessageReplies", fields: [parentId], references: [id], onDelete: SetNull)
+  replies DirectMessage[] @relation("DirectMessageReplies")
+
+  reactions Reaction[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([profileId])
   @@index([conversationId])
+  @@index([parentId])
 }

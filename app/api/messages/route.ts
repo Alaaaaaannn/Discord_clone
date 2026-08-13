@@ -1,5 +1,6 @@
 import { Message } from "@/generated/prisma";
 import { currentProfile } from "@/lib/current-profile";
+import { messageInclude } from "@/lib/message-includes";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
@@ -28,13 +29,7 @@ export async function GET(req: Request) {
         where: {
           channelId,
         },
-        include: {
-          member: {
-            include: {
-              profile: true,
-            },
-          },
-        },
+        include: messageInclude,
         orderBy: {
           createdAt: "desc",
         },
@@ -43,13 +38,7 @@ export async function GET(req: Request) {
       messages = await prisma.message.findMany({
         take: MESSAGES_BATCH,
         where: { channelId },
-        include: {
-          member: {
-            include: {
-              profile: true,
-            },
-          },
-        },
+        include: messageInclude,
         orderBy: {
           createdAt: "desc",
         },

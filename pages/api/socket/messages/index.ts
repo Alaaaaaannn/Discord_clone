@@ -1,4 +1,5 @@
 import { currentProfilePages } from "@/lib/current-profile-pages";
+import { messageInclude } from "@/lib/message-includes";
 import { prisma } from "@/lib/prisma";
 import { NextApiResponseServerIo } from "@/types";
 import { NextApiRequest } from "next";
@@ -12,7 +13,7 @@ export default async function handler(
   }
   try {
     const profile = await currentProfilePages(req);
-    const { content, fileUrl, fileName, fileType } = req.body;
+    const { content, fileUrl, fileName, fileType, parentId } = req.body;
     const { serverId, channelId } = req.query;
     if (!profile) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -62,6 +63,17 @@ export default async function handler(
       return res.status(404).json({ message: "Member not found" });
     }
 
+    // Guard the reply target: it must be a real message in this channel, or a
+    // client could thread a message onto any other channel's message.
+    const validParentId = parentId
+      ? (
+          await prisma.message.findFirst({
+            where: { id: parentId as string, channelId: channelId as string },
+            select: { id: true },
+          })
+        )?.id ?? null
+      : null;
+
     const message = await prisma.message.create({
       data: {
         content,
@@ -70,14 +82,10 @@ export default async function handler(
         fileType,
         channelId: channelId as string,
         memberId: member.id,
+        // Only accept a parent that lives in this same channel.
+        parentId: validParentId,
       },
-      include: {
-        member: {
-          include: {
-            profile: true,
-          },
-        },
-      },
+      include: messageInclude,
     });
     const channelKey = `chat:${channelId}:messages`;
     res?.socket?.server?.io?.emit(channelKey, message);

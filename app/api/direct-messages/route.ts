@@ -1,5 +1,6 @@
 import { currentProfile } from "@/lib/current-profile";
 import { withMemberShape } from "@/lib/direct-message";
+import { directMessageInclude } from "@/lib/message-includes";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
@@ -33,7 +34,7 @@ export async function GET(req: Request) {
       take: MESSAGES_BATCH,
       ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
       where: { conversationId },
-      include: { profile: true },
+      include: directMessageInclude,
       orderBy: { createdAt: "desc" },
     });
 

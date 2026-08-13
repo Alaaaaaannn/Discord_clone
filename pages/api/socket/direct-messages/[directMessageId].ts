@@ -1,5 +1,6 @@
 import { currentProfilePages } from "@/lib/current-profile-pages";
 import { withMemberShape } from "@/lib/direct-message";
+import { directMessageInclude } from "@/lib/message-includes";
 import { prisma } from "@/lib/prisma";
 import { NextApiResponseServerIo } from "@/types";
 import { NextApiRequest } from "next";
@@ -39,7 +40,7 @@ export default async function handler(
         id: directMessageId as string,
         conversationId: conversationId as string,
       },
-      include: { profile: true },
+      include: directMessageInclude,
     });
     if (!message || message.deleted) {
       return res.status(404).json({ message: "Message not found" });
@@ -60,7 +61,7 @@ export default async function handler(
           content: "This message has been deleted.",
           deleted: true,
         },
-        include: { profile: true },
+        include: directMessageInclude,
       });
     }
 
@@ -71,7 +72,7 @@ export default async function handler(
       message = await prisma.directMessage.update({
         where: { id: directMessageId as string },
         data: { content },
-        include: { profile: true },
+        include: directMessageInclude,
       });
     }
 
