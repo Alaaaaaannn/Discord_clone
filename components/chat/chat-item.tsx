@@ -15,6 +15,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Field } from "../ui/field";
+import { useModal } from "@/hooks/use-modal-store";
 
 interface ChatItemProps {
   id: string;
@@ -66,16 +67,16 @@ export const ChatItem = ({
   socketQuery,
 }: ChatItemProps) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const { onOpen } = useModal();
   useEffect(() => {
     const handleKeyDown = (event: any) => {
-      if(event.key === "Escape" || event.keyCode === 27){
+      if (event.key === "Escape" || event.keyCode === 27) {
         setIsEditing(false);
       }
-    }
-    window.addEventListener("keydown",handleKeyDown);
-    return () => window.removeEventListener("keydown",handleKeyDown)
-  },[])
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -193,10 +194,11 @@ export const ChatItem = ({
                 <Controller
                   control={form.control}
                   name="content"
-                  render={({ field}) => (
+                  render={({ field }) => (
                     <Field className="flex-1">
                       <div className="relative w-full">
-                        <Input disabled={isLoading}
+                        <Input
+                          disabled={isLoading}
                           className="p-2 bg-zinc-200/90 dark:bg-zinc-700/75 border-none border-0 focus-visible:ring focus-visible:ring-offset-0 text-zinc-600 dark:text-zinc-200"
                           placeholder="Edited message"
                           {...field}
@@ -205,7 +207,13 @@ export const ChatItem = ({
                     </Field>
                   )}
                 />
-                <Button disabled={isLoading} type="submit" size="sm" variant="primary" className="cursor-pointer">
+                <Button
+                  disabled={isLoading}
+                  type="submit"
+                  size="sm"
+                  variant="primary"
+                  className="cursor-pointer"
+                >
                   Save
                 </Button>
               </form>
@@ -227,7 +235,15 @@ export const ChatItem = ({
             </ActionTooltip>
           )}
           <ActionTooltip label="Delete">
-            <Trash className="cursor-pointer ml-auto w-4 h-4 text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 transition" />
+            <Trash
+              onClick={() =>
+                onOpen("deleteMessage", {
+                  apiUrl: `${socketUrl}/${id}`,
+                  query: socketQuery,
+                })
+              }
+              className="cursor-pointer ml-auto w-4 h-4 text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 transition"
+            />
           </ActionTooltip>
         </div>
       )}
