@@ -1,4 +1,5 @@
 import { currentProfilePages } from "@/lib/current-profile-pages";
+import { withMemberShape } from "@/lib/direct-message";
 import { prisma } from "@/lib/prisma";
 import { NextApiResponseServerIo } from "@/types";
 import { NextApiRequest } from "next";
@@ -27,44 +28,12 @@ export default async function handler(
     const conversation = await prisma.conversation.findFirst({
       where: {
         id: conversationId as string,
-        OR: [
-          {
-            memberOne: {
-              profileId: profile.id,
-            },
-          },
-          {
-            memberTwo: {
-              profileId: profile.id,
-            },
-          },
-        ],
-      },
-      include: {
-        memberOne: {
-          include: {
-            profile: true,
-          },
-        },
-        memberTwo: {
-          include: {
-            profile: true,
-          },
-        },
+        OR: [{ profileOneId: profile.id }, { profileTwoId: profile.id }],
       },
     });
 
     if (!conversation) {
       return res.status(404).json({ message: "Conversation not found" });
-    }
-
-    const member =
-      conversation.memberOne.profileId === profile.id
-        ? conversation.memberOne
-        : conversation.memberTwo;
-
-    if (!member) {
-      return res.status(404).json({ message: "Member not found" });
     }
 
     const message = await prisma.directMessage.create({
@@ -74,19 +43,14 @@ export default async function handler(
         fileName,
         fileType,
         conversationId: conversationId as string,
-        memberId: member.id,
+        profileId: profile.id,
       },
-      include: {
-        member: {
-          include: {
-            profile: true,
-          },
-        },
-      },
+      include: { profile: true },
     });
+
     const channelKey = `chat:${conversationId}:messages`;
-    res?.socket?.server?.io?.emit(channelKey, message);
-    return res.status(200).json(message);
+    res?.socket?.server?.io?.emit(channelKey, withMemberShape(message));
+    return res.status(200).json(withMemberShape(message));
   } catch (error) {
     console.log("[DIRECT_MESSAGES_POST]", error);
     return res.status(500).json({ message: "Internal Error" });

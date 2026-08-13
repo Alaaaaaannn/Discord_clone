@@ -8,6 +8,7 @@ import { Button } from "../ui/button";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Member, MemberRole, Profile } from "@/generated/prisma";
+import { ChatViewer } from "@/types";
 import { UserAvatar } from "../user-avatar";
 import { ActionTooltip } from "../action-tooltip";
 import { Edit, FileIcon, ShieldAlert, ShieldCheck, Trash } from "lucide-react";
@@ -29,7 +30,7 @@ interface ChatItemProps {
   fileType: string | null;
   fileName: string | null;
   deleted: boolean;
-  currentMember: Member;
+  currentMember: ChatViewer;
   isUpdated: boolean;
   socketUrl: string;
   socketQuery: Record<string, string>;
@@ -102,6 +103,7 @@ export const ChatItem = ({
       content: content,
     });
   }, [form, content]);
+  const colors = "bg-[#444235] border-l-5 hover:bg-[#575544] border-[#998458]";
   const isAdmin = currentMember.role === MemberRole.ADMIN;
   const isModerator = currentMember.role === MemberRole.MODERATOR;
   const isOwner = currentMember.id === member.id;
@@ -111,11 +113,7 @@ export const ChatItem = ({
   const isImage = !!fileUrl && fileType?.startsWith("image/");
   return (
     <div
-      className={cn(
-        "relative group flex my-1 items-center hover:bg-black/5 p-4 transition w-full",
-        isAdmin &&
-          "bg-[#444235] border-l-5 hover:bg-[#575544] border-[#998458]",
-      )}
+      className="relative group flex my-1 items-center hover:bg-gray-200 dark:hover:bg-[#242429] p-4 transition w-full"
     >
       <div className="group flex gap-x-2 items-start w-full">
         <div onClick={onMemberClick} className="cursor-pointer hover:drop-shadow-md transition">

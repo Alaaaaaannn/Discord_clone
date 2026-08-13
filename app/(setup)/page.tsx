@@ -4,6 +4,9 @@ import { prisma } from "@/lib/prisma";
 import { InitialModal } from "@/components/modals/initial-modal";
 const SetupPage = async () => {
   const profile = await initProfile();
+
+  // Like Discord, the landing page is Direct Messages — not a server's channel.
+  // The initial "create a server" modal only shows for a brand new account.
   const server = await prisma.server.findFirst({
     where: {
       members: {
@@ -15,7 +18,7 @@ const SetupPage = async () => {
   });
 
   if (server) {
-    return redirect(`/servers/${server.id}`);
+    return redirect("/me");
   }
   return <InitialModal />;
 };

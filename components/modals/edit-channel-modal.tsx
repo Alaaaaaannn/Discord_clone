@@ -87,9 +87,9 @@ export const EditChannelModal = () => {
 
   return (
     <Dialog open={isModalOpen} onOpenChange={handleClose}>
-      <DialogContent className="bg-white text-black p-0 overflow-hidden rounded-lg">
+      <DialogContent className="bg-white dark:bg-[#242429] text-black p-0 overflow-hidden rounded-lg">
         <DialogHeader className="pt-8 px-6">
-          <DialogTitle className="text-2xl text-center font-bold normal-case tracking-normal">
+          <DialogTitle className="text-2xl dark:text-white text-center font-bold normal-case tracking-normal">
             Edit Channel
           </DialogTitle>
         </DialogHeader>
@@ -101,15 +101,15 @@ export const EditChannelModal = () => {
                 control={form.control}
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel className="uppercase text-xs font-bold text-zinc-500 dark:text-secondary/70">
+                    <FieldLabel className="uppercase text-xs font-bold text-zinc-500 dark:text-zinc-300">
                       Channel name
                     </FieldLabel>
                     <Input
                       id="name"
                       aria-invalid={fieldState.invalid}
                       disabled={isLoading}
-                      className="bg-zinc-300/50 border-0 focus-visible:ring-0
-                                text-black focus-visible:ring-offset-0 px-3"
+                      className="bg-zinc-300/50 dark:bg-zinc-700 border-0 focus-visible:ring-0
+                                text-black dark:text-zinc-300 focus-visible:ring-offset-0 px-3"
                       placeholder="Enter channel name..."
                       {...field}
                       autoComplete="off"
@@ -125,7 +125,7 @@ export const EditChannelModal = () => {
                 name="type"
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel className="uppercase text-xs font-bold text-zinc-500 dark:text-secondary/70">
+                    <FieldLabel className="uppercase text-xs font-bold text-zinc-500 dark:text-zinc-300">
                       Channel Type
                     </FieldLabel>
                     <Select
@@ -133,7 +133,7 @@ export const EditChannelModal = () => {
                       onValueChange={field.onChange}
                       defaultValue={field.value}
                     >
-                      <SelectTrigger className="bg-zinc-300/50 border-0 focus:ring-0 text-black ring-offset-0 focus:ring-offset-0 capitalize outline-none px-3">
+                      <SelectTrigger className="bg-zinc-300/50 dark:text-zinc-300 dark:bg-zinc-700 border-0 focus:ring-0 text-black ring-offset-0 focus:ring-offset-0 capitalize outline-none px-3">
                         <SelectValue placeholder="Select a channel type" />
                       </SelectTrigger>
                       <SelectContent>
@@ -156,7 +156,7 @@ export const EditChannelModal = () => {
               />
             </FieldGroup>
           </div>
-          <DialogFooter className="bg-gray-100 px-6 py-4">
+          <DialogFooter className="bg-gray-100 dark:bg-[#242429] px-6 py-4">
             <Button
               type="submit"
               variant="primary"

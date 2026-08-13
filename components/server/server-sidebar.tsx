@@ -10,6 +10,7 @@ import { Separator } from "../ui/separator";
 import { ServerSection } from "./server-section";
 import { ServerChannel } from "./server-channel";
 import { ServerMember } from "./server-member";
+import { UserDock } from "@/components/user-dock";
 
 interface ServerSidebarProps {
   serverId: string;
@@ -74,7 +75,7 @@ export const ServerSidebar = async ({ serverId }: ServerSidebarProps) => {
   )?.role;
 
   return (
-    <div className="flex flex-col h-full text-primary w-full dark:bg-[#2B2D31] bg-[#F2F3F5]">
+    <div className="flex flex-col h-full text-primary w-full dark:bg-[#121214] bg-[#F2F3F5]">
       <ServerHeader server={server} role={role} />
       <ScrollArea className="flex-1 px-3">
         <div className="mt-2">
@@ -186,6 +187,7 @@ export const ServerSidebar = async ({ serverId }: ServerSidebarProps) => {
           </div>
         )}
       </ScrollArea>
+      <UserDock name={profile.name} imageUrl={profile.imageUrl} />
     </div>
   );
 };

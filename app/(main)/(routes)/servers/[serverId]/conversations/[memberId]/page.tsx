@@ -1,24 +1,26 @@
-import { ChatHeader } from "@/components/chat/chat-header";
-import { ChatInput } from "@/components/chat/chat-input";
-import { ChatMessages } from "@/components/chat/chat-messages";
-import { CallLobby } from "@/components/call-lobby";
-import { getOrCreateConversation } from "@/lib/conversation";
+import { redirect } from "next/navigation";
+import { auth } from "@clerk/nextjs/server";
+import qs from "query-string";
+
 import { currentProfile } from "@/lib/current-profile";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@clerk/nextjs/server";
-import { redirect } from "next/navigation";
 
 interface MemberIdPageProps {
   params: Promise<{
     memberId: string;
     serverId: string;
-  }>,
-  // Search params arrive as strings, never booleans.
+  }>;
   searchParams: Promise<{
     video?: string;
     audio?: string;
   }>;
 }
+
+/**
+ * DMs are global now, so a server-scoped conversation URL is just an alias:
+ * resolve the member to their profile and hand off to /me/[profileId], which
+ * is the same thread you'd get from the friends list.
+ */
 const MemberIdPage = async ({ params, searchParams }: MemberIdPageProps) => {
   const profile = await currentProfile();
   if (!profile) {
@@ -28,77 +30,25 @@ const MemberIdPage = async ({ params, searchParams }: MemberIdPageProps) => {
 
   const { serverId, memberId } = await params;
   const { video, audio } = await searchParams;
-  const isVideoCall = video === "true";
-  const isVoiceCall = audio === "true";
-  const inCall = isVideoCall || isVoiceCall;
-  const currentMember = await prisma.member.findFirst({
-    where: {
-      serverId: serverId,
-      profileId: profile.id,
-    },
-    include: {
-      profile: true,
-    },
+
+  const member = await prisma.member.findFirst({
+    where: { id: memberId, serverId },
+    select: { profileId: true },
   });
 
-  if (!currentMember) {
-    return redirect("/");
-  }
-
-  const conversation = await getOrCreateConversation(
-    currentMember.id,
-    memberId,
-  );
-
-  if (!conversation) {
+  if (!member) {
     return redirect(`/servers/${serverId}`);
   }
 
-  const { memberOne, memberTwo } = conversation;
-
-  const otherMember =
-    memberOne.profileId === profile.id ? memberTwo : memberOne;
-
-  return (
-    <div className="bg-white dark:bg-[#313338] flex flex-col h-full">
-      <ChatHeader
-        imageUrl={otherMember.profile.imageUrl}
-        name={otherMember.profile.name}
-        serverId={serverId}
-        type="conversation"
-      />
-      {inCall && (
-        <CallLobby
-          chatId={conversation.id}
-          video={isVideoCall}
-          audio={true}
-          name={otherMember.profile.name}
-          imageUrl={otherMember.profile.imageUrl}
-          cancelHref={`/servers/${serverId}/conversations/${memberId}`}
-        />
-      )}
-      {!inCall && (
-        <>
-          <ChatMessages
-            member={currentMember}
-            name={otherMember.profile.name}
-            chatId={conversation.id}
-            type="conversation"
-            apiUrl="/api/direct-messages"
-            paramKey="conversationId"
-            paramValue={conversation.id}
-            socketUrl="/api/socket/direct-messages"
-            socketQuery={{ conversationId: conversation.id }}
-          />
-          <ChatInput
-            name={otherMember.profile.name}
-            type="conversation"
-            apiUrl="/api/socket/direct-messages"
-            query={{ conversationId: conversation.id }}
-          />
-        </>
-      )}
-    </div>
+  return redirect(
+    qs.stringifyUrl(
+      {
+        url: `/me/${member.profileId}`,
+        query: { video, audio },
+      },
+      { skipNull: true },
+    ),
   );
 };
+
 export default MemberIdPage;

@@ -27,7 +27,7 @@ export const NavItem = ({
   }
   return (
     <ActionTooltip side="right" align="center" label={name}>
-      <button onClick={(onClick)} className="group relative flex items-center">
+      <button onClick={(onClick)} className="group relative flex items-center cursor-pointer">
         <div
           className={cn(
             "absolute left-0 bg-primary rounded-r-full transition-all w-[4px]",

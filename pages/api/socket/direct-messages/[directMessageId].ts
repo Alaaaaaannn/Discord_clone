@@ -1,5 +1,5 @@
-import { MemberRole } from "@/generated/prisma";
 import { currentProfilePages } from "@/lib/current-profile-pages";
+import { withMemberShape } from "@/lib/direct-message";
 import { prisma } from "@/lib/prisma";
 import { NextApiResponseServerIo } from "@/types";
 import { NextApiRequest } from "next";
@@ -15,121 +15,71 @@ export default async function handler(
     const profile = await currentProfilePages(req);
     const { directMessageId, conversationId } = req.query;
     const { content } = req.body;
+
     if (!profile) {
       return res.status(401).json({ error: "Unauthorized" });
     }
     if (!conversationId) {
-      return res.status(400).json({ error: "Conversation ID missing" });
+      return res.status(400).json({ error: "Conversation Id missing" });
     }
 
+    // DMs are global now — the participants are profiles, not members.
     const conversation = await prisma.conversation.findFirst({
       where: {
         id: conversationId as string,
-        OR: [
-          {
-            memberOne: {
-              profileId: profile.id,
-            },
-          },
-          {
-            memberTwo: {
-              profileId: profile.id,
-            },
-          },
-        ],
-      },
-      include: {
-        memberOne: {
-          include: {
-            profile: true,
-          },
-        },
-        memberTwo: {
-          include: {
-            profile: true,
-          },
-        },
+        OR: [{ profileOneId: profile.id }, { profileTwoId: profile.id }],
       },
     });
-
     if (!conversation) {
-      return res.status(404).json({ error: "Conversation not found" });
+      return res.status(404).json({ message: "Conversation not found" });
     }
 
-    const member =
-      conversation.memberOne.profileId === profile.id
-        ? conversation.memberOne
-        : conversation.memberTwo;
-    if (!member) {
-      return res.status(404).json({ error: "Member not found" });
-    }
-    let directMessage = await prisma.directMessage.findFirst({
+    let message = await prisma.directMessage.findFirst({
       where: {
         id: directMessageId as string,
         conversationId: conversationId as string,
       },
-      include: {
-        member: {
-          include: {
-            profile: true,
-          },
-        },
-      },
+      include: { profile: true },
     });
-    if (!directMessage || directMessage.deleted) {
-      return res.status(404).json({ error: "Message not found" });
+    if (!message || message.deleted) {
+      return res.status(404).json({ message: "Message not found" });
     }
-    const isMessageOwner = directMessage.memberId === member.id;
-    const isAdmin = member.role === MemberRole.ADMIN;
-    const isModerator = member.role === MemberRole.MODERATOR;
-    const canModify = isMessageOwner || isAdmin || isModerator;
-    if (!canModify) {
+
+    // A DM has no moderators — only the author may edit or delete.
+    if (message.profileId !== profile.id) {
       return res.status(401).json({ error: "Unauthorized" });
     }
+
     if (req.method === "DELETE") {
-      directMessage = await prisma.directMessage.update({
-        where: {
-          id: directMessageId as string,
-        },
+      message = await prisma.directMessage.update({
+        where: { id: directMessageId as string },
         data: {
           fileUrl: null,
+          fileName: null,
+          fileType: null,
           content: "This message has been deleted.",
           deleted: true,
         },
-        include: {
-          member: {
-            include: {
-              profile: true,
-            },
-          },
-        },
+        include: { profile: true },
       });
     }
+
     if (req.method === "PATCH") {
-      if (!isMessageOwner) {
-        return res.status(401).json({ error: "Unauthorized" });
+      if (!content) {
+        return res.status(400).json({ error: "Content missing" });
       }
-      directMessage = await prisma.directMessage.update({
-        where: {
-          id: directMessageId as string,
-        },
-        data: {
-          content,
-        },
-        include: {
-          member: {
-            include: {
-              profile: true,
-            },
-          },
-        },
+      message = await prisma.directMessage.update({
+        where: { id: directMessageId as string },
+        data: { content },
+        include: { profile: true },
       });
     }
-    const updateKey = `chat:${conversation.id}:messages:update`;
-    res?.socket?.server?.io?.emit(updateKey, directMessage);
-    return res.status(200).json(directMessage);
+
+    const updateKey = `chat:${conversationId}:messages:update`;
+    res?.socket?.server?.io?.emit(updateKey, withMemberShape(message));
+    return res.status(200).json(withMemberShape(message));
   } catch (error) {
-    console.log("[MESSAGE_ID]", error);
+    console.log("[DIRECT_MESSAGE_ID]", error);
     return res.status(500).json({ error: "Internal Error" });
   }
 }

@@ -5,6 +5,8 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       { protocol: "https", hostname: "*.ufs.sh", pathname: "/f/*" },
       { protocol: "https", hostname: "utfs.io", pathname: "/f/*" },
+      // GIPHY GIFs are hotlinked from their CDN (media0-4.giphy.com, i.giphy.com).
+      { protocol: "https", hostname: "*.giphy.com" },
     ],
   },
   experimental: {

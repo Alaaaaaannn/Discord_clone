@@ -14,11 +14,44 @@ model Profile {
   imageUrl String @db.Text
   email String @db.Text
   description String @db.Text
+  // Shareable friend-invite code, the personal equivalent of Server.inviteCode.
+  friendCode String @unique @default(uuid())
   servers Server[]
   members Member[]
   channels Channel[]
+
+  // DMs are global (profile-to-profile), not scoped to a server.
+  conversationsInitiated Conversation[] @relation("ProfileOne")
+  conversationsReceived Conversation[] @relation("ProfileTwo")
+  directMessages DirectMessage[]
+
+  friendRequestsSent FriendRequest[] @relation("Requester")
+  friendRequestsReceived FriendRequest[] @relation("Addressee")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+enum FriendRequestStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+// One row per relationship. Friends are rows with status ACCEPTED, in either
+// direction — always query both requesterId and addresseeId.
+model FriendRequest {
+  id String @id @default(uuid())
+  requesterId String
+  requester Profile @relation("Requester", fields: [requesterId], references: [id], onDelete: Cascade)
+  addresseeId String
+  addressee Profile @relation("Addressee", fields: [addresseeId], references: [id], onDelete: Cascade)
+  status FriendRequestStatus @default(PENDING)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([requesterId, addresseeId])
+  @@index([addresseeId])
+  @@index([requesterId])
 }
 
 model Server {
@@ -48,9 +81,6 @@ model Member {
   serverId String
   server Server @relation(fields: [serverId],references: [id],onDelete: Cascade)
   messages Message[]
-  directMessages DirectMessage[]
-  conversationsInitiated Conversation[] @relation("MemberOne")
-  conversationsReceived Conversation[] @relation("MemberTwo")
   profileId String
   profile Profile @relation(fields: [profileId],references: [id],onDelete: Cascade)
   createdAt DateTime @default(now())
@@ -101,16 +131,16 @@ model Message {
 
 model Conversation {
   id String @id @default(uuid())
-  memberOneId String
-  memberOne Member @relation("MemberOne", fields: [memberOneId], references: [id], onDelete: Cascade)
-  memberTwoId String
-  memberTwo Member @relation("MemberTwo", fields: [memberTwoId], references: [id], onDelete: Cascade)
+  profileOneId String
+  profileOne Profile @relation("ProfileOne", fields: [profileOneId], references: [id], onDelete: Cascade)
+  profileTwoId String
+  profileTwo Profile @relation("ProfileTwo", fields: [profileTwoId], references: [id], onDelete: Cascade)
 
   directMessages DirectMessage[]
 
-  @@index([memberTwoId])
+  @@index([profileTwoId])
 
-  @@unique([memberOneId, memberTwoId])
+  @@unique([profileOneId, profileTwoId])
 }
 
 model DirectMessage {
@@ -120,8 +150,8 @@ model DirectMessage {
   fileName String? @db.Text
   fileType String? @db.Text
 
-  memberId String
-  member Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  profileId String
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
   conversationId String
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
@@ -131,6 +161,6 @@ model DirectMessage {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([memberId])
+  @@index([profileId])
   @@index([conversationId])
 }

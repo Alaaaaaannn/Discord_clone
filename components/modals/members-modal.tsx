@@ -19,7 +19,7 @@ import {
   ShieldCheck,
   ShieldQuestion,
 } from "lucide-react";
-import { useReducer, useState } from "react";
+import { useState } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -87,12 +87,12 @@ export const MembersModal = () => {
 
   return (
     <Dialog open={isModalOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-white text-black overflow-hidden rounded-lg">
+      <DialogContent className="bg-white dark:bg-[#242429] text-black overflow-hidden rounded-lg">
         <DialogHeader className="pt-8 px-6">
-          <DialogTitle className="text-2xl text-center font-bold normal-case tracking-normal">
+          <DialogTitle className="text-2xl text-center dark:text-white font-bold normal-case tracking-normal">
             Manage Members
           </DialogTitle>
-          <DialogDescription className="text-center text-zinc-500">
+          <DialogDescription className="text-center dark:text-zinc-300 text-zinc-500">
             {server?.members?.length} Members
           </DialogDescription>
         </DialogHeader>
@@ -102,11 +102,11 @@ export const MembersModal = () => {
               <div className="flex items-center gap-x-2">
                 <UserAvatar src={member.profile.imageUrl} />
                 <div className="flex flex-col gap-y-1">
-                  <div className="text-xs font-semibold flex items-center gap-x-1">
+                  <div className="text-xs font-semibold dark:text-white flex items-center gap-x-1">
                     {member.profile.name}
                     {roleIconMap[member.role]}
                   </div>
-                  <p className="text-xs text-zinc-500">
+                  <p className="text-xs dark:text-zinc-400 text-zinc-500">
                     {member.profile.email}
                   </p>
                 </div>

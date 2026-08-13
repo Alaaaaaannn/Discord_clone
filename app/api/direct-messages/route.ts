@@ -1,5 +1,5 @@
-import { DirectMessage } from "@/generated/prisma";
 import { currentProfile } from "@/lib/current-profile";
+import { withMemberShape } from "@/lib/direct-message";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
@@ -17,53 +17,33 @@ export async function GET(req: Request) {
     if (!conversationId) {
       return new NextResponse("Conversation ID Missing", { status: 400 });
     }
-    let messages: DirectMessage[] = [];
-    if (cursor) {
-      messages = await prisma.directMessage.findMany({
-        take: MESSAGES_BATCH,
-        skip: 1,
-        cursor: {
-          id: cursor,
-        },
-        where: {
-          conversationId,
-        },
-        include: {
-          member: {
-            include: {
-              profile: true,
-            },
-          },
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-      });
-    } else {
-      messages = await prisma.directMessage.findMany({
-        take: MESSAGES_BATCH,
-        where: { conversationId },
-        include: {
-          member: {
-            include: {
-              profile: true,
-            },
-          },
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-      });
+
+    // Only the two participants may read the thread.
+    const conversation = await prisma.conversation.findFirst({
+      where: {
+        id: conversationId,
+        OR: [{ profileOneId: profile.id }, { profileTwoId: profile.id }],
+      },
+    });
+    if (!conversation) {
+      return new NextResponse("Conversation not found", { status: 404 });
     }
 
-    let nextCursor = null;
+    const messages = await prisma.directMessage.findMany({
+      take: MESSAGES_BATCH,
+      ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
+      where: { conversationId },
+      include: { profile: true },
+      orderBy: { createdAt: "desc" },
+    });
 
+    let nextCursor = null;
     if (messages.length === MESSAGES_BATCH) {
       nextCursor = messages[MESSAGES_BATCH - 1].id;
     }
 
     return NextResponse.json({
-      items: messages,
+      items: messages.map(withMemberShape),
       nextCursor,
     });
   } catch (error) {

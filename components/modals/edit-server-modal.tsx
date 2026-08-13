@@ -84,12 +84,12 @@ export const EditServerModal = () => {
 
   return (
     <Dialog open={isModalOpen} onOpenChange={handleClose}>
-      <DialogContent className="bg-white text-black p-0 overflow-hidden rounded-lg">
+      <DialogContent className="bg-white dark:bg-[#242429] text-black p-0 overflow-hidden rounded-lg">
         <DialogHeader className="pt-8 px-6">
-          <DialogTitle className="text-2xl text-center font-bold normal-case tracking-normal">
+          <DialogTitle className="text-2xl dark:text-white text-center font-bold normal-case tracking-normal">
             Customize your server
           </DialogTitle>
-          <DialogDescription className="text-center text-base text-zinc-500">
+          <DialogDescription className="text-center dark:text-zinc-300 text-base text-zinc-500">
             Give your server a personality with a name and an image. It will be
             changeable whenever you wish.
           </DialogDescription>
@@ -121,14 +121,14 @@ export const EditServerModal = () => {
                 control={form.control}
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel className="uppercase text-xs font-bold text-zinc-500 dark:text-secondary/70">
+                    <FieldLabel className="uppercase text-xs font-bold text-zinc-500 dark:text-zinc-300">
                       Server name
                     </FieldLabel>
                     <Input
                       id="name"
                       aria-invalid={fieldState.invalid}
                       disabled={isLoading}
-                      className="bg-zinc-300/50 border-0 focus-visible:ring-0
+                      className="bg-zinc-300/50 dark:bg-zinc-700 dark:text-zinc-100 border-0 focus-visible:ring-0
                                 text-black focus-visible:ring-offset-0 px-3"
                       placeholder="Enter server name..."
                       {...field}
@@ -145,11 +145,11 @@ export const EditServerModal = () => {
                 control={form.control}
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel className="uppercase text-xs font-bold text-zinc-500 dark:text-secondary/70">
+                    <FieldLabel className="uppercase text-xs font-bold text-zinc-500 dark:text-zinc-300">
                       Server Description
                     </FieldLabel>
                     <InputGroup
-                      className="bg-zinc-300/50 border-0 focus-visible:ring-0
+                      className="bg-zinc-300/50 border-0 dark:bg-zinc-700 dark:text-zinc-100 focus-visible:ring-0
                                 text-black focus-visible:ring-offset-0 px-3"
                     >
                       <InputGroupTextarea
@@ -161,7 +161,7 @@ export const EditServerModal = () => {
                         aria-invalid={fieldState.invalid}
                       />
                       <InputGroupAddon align="block-end">
-                        <InputGroupText className="tabular-nums">
+                        <InputGroupText className="tabular-nums dark:text-zinc-300">
                           {field.value.length}/200 characters
                         </InputGroupText>
                       </InputGroupAddon>
@@ -174,7 +174,7 @@ export const EditServerModal = () => {
               />
             </FieldGroup>
           </div>
-          <DialogFooter className="bg-gray-100 px-6 py-4">
+          <DialogFooter className="bg-gray-100 dark:bg-[#242429] px-6 py-4">
             <Button
               type="submit"
               variant="primary"
